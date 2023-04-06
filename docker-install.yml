@@ -1,0 +1,155 @@
+# Build Pipeline for Phoenix.PensionsDashboards.PatRefreshService
+
+
+trigger:
+
+  - none
+
+
+variables:
+
+  buildConfiguration: 'Release'
+  dockerbuildcontext : '$(Build.SourcesDirectory)'
+
+
+stages:
+
+  - stage: Start
+    displayName: 'Start'
+
+    jobs:
+
+      - job: StartPipeline
+        displayName: 'Start-the-Pipeline'
+        pool:
+          name: 'sh-linux'
+
+        steps:
+
+          - task: Bash@3
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo 'Pipeline Started the Build '
+
+
+  - stage: Build
+    displayName: 'Build'
+
+    jobs:
+
+      - job: BuildProject
+        displayName: 'Build-the-Project'
+        pool:
+          name: 'sh-linux'
+
+        steps:
+          - task: Bash@3
+            name : 'DockerInstall'
+            displayName : 'Docker-Install : Install the Docker into the Agent System'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Update package index
+                sudo apt update
+                # Install Docker dependencies
+                sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
+                # Add Docker GPG key
+                curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/docker.gpg
+                # Add Docker repository
+                sudo add-apt-repository "deb [arch=$(dpkg --print-architecture)] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+                # Update package index
+                sudo apt update
+                # Install Docker
+                sudo apt install docker-ce -y
+                # Start Docker service
+                sudo systemctl start docker
+                # Enable Docker service to start on boot
+                sudo systemctl enable docker
+                # Verify Docker installation
+                docker --version
+
+          - task: Bash@3
+            name: 'DockerVersionCheck'
+            displayName: 'Docker-Version-Check : Check the Docker Version Installed into the Agent System'
+            inputs:
+              targetType: 'inline'
+              script: 'docker --version'
+
+          - task: Bash@3
+            name: 'DockerStatusCheck'
+            displayName: 'Docker-Staus-Check : Check the Docker Status into the Agent System'
+            continueOnError: true
+            inputs:
+              targetType: 'inline'
+              script: 'sudo systemctl status docker'
+          
+          - task: Bash@3
+            name: 'WhoAmI'
+            displayName: 'WhoAmI'
+            inputs:
+              targetType: 'inline'
+              script: 'whoami'
+          
+          - task: Bash@3
+            name: 'AddAzDevOpstodockerGroup'
+            displayName: 'Add AzDevOps to docker Group'
+            inputs:
+              targetType: 'inline'
+              script: 'sudo usermod -aG docker AzDevOps'
+         
+          - task: Bash@3
+            name: 'RestartDockertorecognisegroupmembership'
+            displayName: 'Restart Docker to recognise group membership'
+            inputs:
+              targetType: 'inline'
+              script: 'sudo systemctl restart docker'
+          
+          - task: Bash@3
+            name: 'CheckwhichGroupsAzDevOps'
+            displayName: 'Check which Groups AzDevOps is in...'
+            inputs:
+              targetType: 'inline'
+              script: 'groups AzDevOps'
+          
+          - task: Bash@3
+            name: 'dockergrouprootaccesstothedeamon'
+            displayName: 'give the docker group root access to the deamon'
+            inputs:
+              targetType: 'inline'
+              script: |
+                sudo chown root:docker /var/run/docker.sock
+
+          - task: Bash@3
+            name: 'allrightstodeamon'
+            displayName: 'Give current user all rights to docker deamon'
+            inputs:
+              targetType: 'inline'
+              script: |
+                sudo chmod 777 /var/run/docker.sock
+
+          - task: Bash@3
+            name: 'DockerStatusCheck1'
+            displayName: 'Docker-Staus-Check : Check the Docker Status into the Agent System'
+            continueOnError: true
+            inputs:
+              targetType: 'inline'
+              script: 'sudo systemctl status docker'
+
+  - stage: End
+    displayName: 'End'
+
+    jobs:
+
+      - job: EndPipeline
+        displayName: 'End-the-Pipeline'
+        pool:
+          name: 'phx-vmss-pba-mgmt-prd-uks-002'
+
+        steps:
+
+          - task: Bash@3
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo 'Pipeline Ended with Build Completed for Phoenix.PensionsDashboards.PatRefreshService.'
