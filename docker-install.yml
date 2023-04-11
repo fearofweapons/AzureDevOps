@@ -1,4 +1,5 @@
-# Build Pipeline for Phoenix.PensionsDashboards.PatRefreshService
+# Build Pipeline to install Docker CLI on a slef hosted LINUX Ubuntu pool
+# 
 
 
 trigger:
@@ -23,6 +24,7 @@ stages:
         displayName: 'Start-the-Pipeline'
         pool:
           name: 'sh-linux'
+          # use the name of the self hosted linux build agent pool
 
         steps:
 
@@ -144,7 +146,7 @@ stages:
       - job: EndPipeline
         displayName: 'End-the-Pipeline'
         pool:
-          name: 'phx-vmss-pba-mgmt-prd-uks-002'
+          name: 'sh-linux'
 
         steps:
 
@@ -152,4 +154,4 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                echo 'Pipeline Ended with Build Completed for Phoenix.PensionsDashboards.PatRefreshService.'
+                echo 'Pipeline Ended with Build Completed.'
