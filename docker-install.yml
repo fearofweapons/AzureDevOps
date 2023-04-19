@@ -2,9 +2,7 @@
 # 
 
 
-trigger:
-
-  - none
+trigger: none
 
 
 variables:
